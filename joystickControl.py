@@ -6,7 +6,7 @@
 
 import rospy	# To make the program act as a ROS node
 import pygame	# To use Joystick Module
-from std_msgs.msg import Float32, Int16, Int16MultiArray
+from std_msgs.msg import Float32, Int16, Int16MultiArray, MultiArrayDimension
 
 pub = rospy.Publisher('joy', Float32)			# Publishes joystick's raw data to 'joy' topic
 steer = rospy.Publisher('steering_perc', Int16)		# Publishes steering message to 'steering_perc' topic
@@ -42,8 +42,8 @@ def joy():
 	    pygame.draw.rect(screen, GREEN, [204,204,102,102], 0)	# safe zone (for joystick tolerance)		
 	    pygame.draw.rect(screen, CYAN, [0,204,204,102], 0)		# still turn (left)
 	    pygame.draw.rect(screen, CYAN, [306,204,204,102], 0)	# still turn (right)
-	    pygame.draw.rect(screen, direct, [204,0,102,204], 0)	# direct forward
-	    pygame.draw.rect(screen, direct, [204,306,102,204], 0)	# direct bakward
+	    pygame.draw.rect(screen, PINK, [204,0,102,204], 0)		# direct forward
+	    pygame.draw.rect(screen, PINK, [204,306,102,204], 0)	# direct bakward
 	    pygame.draw.rect(screen, PURPLE, [0,0,204,204], 0)		# compound motion
 	    pygame.draw.rect(screen, PURPLE, [306,0,204,204], 0)	# compound motion
 	    pygame.draw.rect(screen, PURPLE, [0,306,204,204], 0)	# compound motion
