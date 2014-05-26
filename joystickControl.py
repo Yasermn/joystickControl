@@ -19,10 +19,13 @@ m1.layout.dim = [MultiArrayDimension('data', 1, 4)]
 m1.data = (1,75,1,75)		# Direct Backward
 m2 = Int16MultiArray()
 m2.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m2.data = (1,0,1,0)		# Still
+m2.data = (1,0,1,0)		# Backward to Still
 m3 = Int16MultiArray()
 m3.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m3.data = (0,75,0,75)		# Direct Forward
+m3.data = (0,0,0,0)		# Forward to Still
+m4 = Int16MultiArray()
+m4.layout.dim = [MultiArrayDimension('data', 1, 4)]
+m4.data = (0,75,0,75)		# Direct Forward
 
 rospy.init_node('joy', anonymous=True)		# Initiate ROS node 'joy'
 r = rospy.Rate(10) 				# Frequency: 10hz
@@ -101,12 +104,21 @@ def joy():
 
 		# Braking:
 		if (my_joystick.get_button(0) == True):	# Full brake via braking button
-			brake.publish(100)	
+			brake.publish(120)	
 		else:					# Controlled brake via braking pedal
-			brake.publish(int(50 + (brake_axis_pos*100)/2))
+			brake.publish(int(70 + (brake_axis_pos*100)/2))
 
 		# Throttling & Steering actions: 
-		if (-0.2<vert_axis_pos<0.2):		# 0.2 (out of 1.0) is chosen to safe zone's range
+		if (-0.2<vert_axis_pos<0.0):		# 0.2 (out of 1.0) is chosen to safe zone's range
+			throt.publish(m3)		# Still
+			r.sleep()
+			if (-0.2<horiz_axis_pos<0.2):
+				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
+			elif (horiz_axis_pos < -0.2) :
+				steer.publish(int(48 + (horiz_axis_pos*50)/0.8))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
+			elif (horiz_axis_pos > 0.2) :
+				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
+		if (0.0<vert_axis_pos<0.2):		# 0.2 (out of 1.0) is chosen to safe zone's range
 			throt.publish(m2)		# Still
 			r.sleep()
 			if (-0.2<horiz_axis_pos<0.2):
@@ -116,7 +128,7 @@ def joy():
 			elif (horiz_axis_pos > 0.2) :
 				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
 		elif (vert_axis_pos < -0.2):
-			throt.publish(m3)		# Forward
+			throt.publish(m4)		# Forward
 			r.sleep()
 			if (-0.2<horiz_axis_pos<0.2):
 				steer.publish(50)
