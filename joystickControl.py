@@ -40,9 +40,9 @@ def joy():
 	PINK = (255,102,178)
 	PURPLE = (161,83,213)
 	
-	l=510
-	w=510
-	t=0.3
+	l=510	# Length of the screen
+	w=510	# Width of the screen
+	t=0.3	# Tolerance specified for safe zone
 
 	# Paint the screen
 	def draw_stick_figure(screen, x, y):
