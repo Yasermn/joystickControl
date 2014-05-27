@@ -40,6 +40,10 @@ def joy():
 	PINK = (255,102,178)
 	PURPLE = (161,83,213)
 	
+	l=510
+	w=510
+	t=0.3
+
 	# Paint the screen
 	def draw_stick_figure(screen, x, y):
 	    pygame.draw.rect(screen, GREEN, [204,204,102,102], 0)	# safe zone (for joystick tolerance)		
@@ -58,7 +62,7 @@ def joy():
 	pygame.init()		# Initiate 'pygame'
 	   
 	# Set the width and height of the screen [width,height]
-	size = [510, 510]
+	size = [l, w]
 	# Start the screen
 	screen = pygame.display.set_mode(size)
 
@@ -106,45 +110,45 @@ def joy():
 		if (my_joystick.get_button(0) == True):	# Full brake via braking button
 			brake.publish(120)	
 		else:					# Controlled brake via braking pedal
-			brake.publish(int(70 + (brake_axis_pos*100)/2))
+			brake.publish(int(60 + (brake_axis_pos*120)/2))
 
 		# Throttling & Steering actions: 
-		if (-0.2<vert_axis_pos<0.0):		# 0.2 (out of 1.0) is chosen to safe zone's range
+		if (-t<vert_axis_pos<0.0):		# t (out of 1.0) is chosen to safe zone's range
 			throt.publish(m3)		# Still
 			r.sleep()
-			if (-0.2<horiz_axis_pos<0.2):
+			if (-t<horiz_axis_pos<t):
 				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
-			elif (horiz_axis_pos < -0.2) :
-				steer.publish(int(48 + (horiz_axis_pos*50)/0.8))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
-			elif (horiz_axis_pos > 0.2) :
-				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
-		if (0.0<vert_axis_pos<0.2):		# 0.2 (out of 1.0) is chosen to safe zone's range
+			elif (horiz_axis_pos < -t) :
+				steer.publish(int(50 + ((horiz_axis_pos+t)*50)/(1-t)))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
+			elif (horiz_axis_pos > t) :
+				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
+		if (0.0<vert_axis_pos<t):		# t (out of 1.0) is chosen to safe zone's range
 			throt.publish(m2)		# Still
 			r.sleep()
-			if (-0.2<horiz_axis_pos<0.2):
+			if (-t<horiz_axis_pos<t):
 				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
-			elif (horiz_axis_pos < -0.2) :
-				steer.publish(int(48 + (horiz_axis_pos*50)/0.8))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
-			elif (horiz_axis_pos > 0.2) :
-				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
-		elif (vert_axis_pos < -0.2):
+			elif (horiz_axis_pos < -t) :
+				steer.publish(int(50 + ((horiz_axis_pos+t)*50)/(1-t)))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
+			elif (horiz_axis_pos > t) :
+				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
+		elif (vert_axis_pos < -t):
 			throt.publish(m4)		# Forward
 			r.sleep()
-			if (-0.2<horiz_axis_pos<0.2):
+			if (-t<horiz_axis_pos<t):
 				steer.publish(50)
-			elif (horiz_axis_pos < -0.2) :
-				steer.publish(int(48 + (horiz_axis_pos*50)/0.8))
-			elif (horiz_axis_pos > 0.2) :
-				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
-		elif (vert_axis_pos > 0.2):
+			elif (horiz_axis_pos < -t) :
+				steer.publish(int(50 + ((horiz_axis_pos+t)*50)/(1-t)))
+			elif (horiz_axis_pos > t) :
+				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
+		elif (vert_axis_pos > t):
 			throt.publish(m1)		# Backward
 			r.sleep()
-			if (-0.2<horiz_axis_pos<0.2):
+			if (-t<horiz_axis_pos<t):
 				steer.publish(50)
-			elif (horiz_axis_pos < -0.2) :
-				steer.publish(int(48 + (horiz_axis_pos*50)/0.8))
-			elif (horiz_axis_pos > 0.2) :
-				steer.publish(int(52 + (horiz_axis_pos*50)/0.8))
+			elif (horiz_axis_pos < -t) :
+				steer.publish(int(50 + ((horiz_axis_pos+t)*50)/(1-t)))
+			elif (horiz_axis_pos > t) :
+				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
 
 		# Some extra stuff for testing:
 	 	print horiz_axis_pos
