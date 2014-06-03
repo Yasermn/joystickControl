@@ -14,18 +14,30 @@ throt = rospy.Publisher('throttle', Int16MultiArray)	# Publishes throttle messag
 brake = rospy.Publisher('brake_perc', Int16)		# Publishes braking message to 'brake_perc' topic
 
 # Throttle standard messages:
-m1 = Int16MultiArray()
-m1.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m1.data = (1,75,1,75)		# Direct Backward
-m2 = Int16MultiArray()
-m2.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m2.data = (1,0,1,0)		# Backward to Still
-m3 = Int16MultiArray()
-m3.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m3.data = (0,0,0,0)		# Forward to Still
-m4 = Int16MultiArray()
-m4.layout.dim = [MultiArrayDimension('data', 1, 4)]
-m4.data = (0,75,0,75)		# Direct Forward
+backward = Int16MultiArray()
+backward.layout.dim = [MultiArrayDimension('data', 1, 4)]
+backward.data = (1,75,1,75)		# Direct Backward
+backward_stop = Int16MultiArray()
+backward_stop.layout.dim = [MultiArrayDimension('data', 1, 4)]
+backward_stop.data = (1,0,1,0)		# Backward to Still
+forward_stop = Int16MultiArray()
+forward_stop.layout.dim = [MultiArrayDimension('data', 1, 4)]
+forward_stop.data = (0,0,0,0)		# Forward to Still
+forward = Int16MultiArray()
+forward.layout.dim = [MultiArrayDimension('data', 1, 4)]
+forward.data = (0,75,0,75)		# Direct Forward
+right = Int16MultiArray()
+right.layout.dim = [MultiArrayDimension('data', 1, 4)]
+right.data = (0,75,0,0)		# Right Turn
+left = Int16MultiArray()
+left.layout.dim = [MultiArrayDimension('data', 1, 4)]
+left.data = (0,0,0,75)		# Left Turn
+right_hard = Int16MultiArray()
+right_hard.layout.dim = [MultiArrayDimension('data', 1, 4)]
+right_hard.data = (0,75,1,75)		# Hard Right Turn
+left_hard = Int16MultiArray()
+left_hard.layout.dim = [MultiArrayDimension('data', 1, 4)]
+left_hard.data = (1,75,0,75)		# Hard Right Turn
 
 rospy.init_node('joy', anonymous=True)		# Initiate ROS node 'joy'
 r = rospy.Rate(10) 				# Frequency: 10hz
@@ -102,6 +114,10 @@ def joy():
 		vert_axis_pos = my_joystick.get_axis(1)		# Vertical axis
 		brake_axis_pos = my_joystick.get_axis(4)	# Axis defined for braking    
 		direct_steer_button = my_joystick.get_button(9)
+		LB = my_joystick.get_button(4)
+		RB = my_joystick.get_button(5)
+		LT = my_joystick.get_axis(2)
+		RT = my_joystick.get_axis(5)
 
 		# Update the coordination of the joystick's pointer on the screen
 		x_coord = (horiz_axis_pos*250)+500/2	# Puts the pointer in the middle (250 in the case of size 500) when reads 0
@@ -115,7 +131,7 @@ def joy():
 
 		# Throttling & Steering actions: 
 		if (-t<vert_axis_pos<0.0):		# t (out of 1.0) is chosen to safe zone's range
-			throt.publish(m3)		# Still
+			throt.publish(forward_stop)		# Still
 			r.sleep()
 			if (-t<horiz_axis_pos<t):
 				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
@@ -124,7 +140,7 @@ def joy():
 			elif (horiz_axis_pos > t) :
 				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
 		if (0.0<vert_axis_pos<t):		# t (out of 1.0) is chosen to safe zone's range
-			throt.publish(m2)		# Still
+			throt.publish(backward_stop)		# Still
 			r.sleep()
 			if (-t<horiz_axis_pos<t):
 				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
@@ -133,7 +149,7 @@ def joy():
 			elif (horiz_axis_pos > t) :
 				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
 		elif (vert_axis_pos < -t):
-			throt.publish(m4)		# Forward
+			throt.publish(forward)		# Forward
 			r.sleep()
 			if (-t<horiz_axis_pos<t):
 				steer.publish(50)
@@ -142,7 +158,7 @@ def joy():
 			elif (horiz_axis_pos > t) :
 				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
 		elif (vert_axis_pos > t):
-			throt.publish(m1)		# Backward
+			throt.publish(backward)		# Backward
 			r.sleep()
 			if (-t<horiz_axis_pos<t):
 				steer.publish(50)
@@ -151,8 +167,28 @@ def joy():
 			elif (horiz_axis_pos > t) :
 				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
 
-		if direct_steer_button == -1 or direct_steer_button == 1:	
-			steer.publish(50)	
+
+		# Differential Steering:
+
+		if LB == True :	
+			throt.publish(left)		
+			r.sleep()	
+
+		if RB == True :	
+			throt.publish(right)		
+			r.sleep()
+
+		if LT > 0.9 :	
+			throt.publish(forward_stop)
+			throt.publish(backward_stop)
+			throt.publish(left_hard)		
+			r.sleep()
+
+		if RT > 0.9 :	
+			throt.publish(forward_stop)
+			throt.publish(backward_stop)
+			throt.publish(right_hard)
+			r.sleep()
 
 		# Some extra stuff for testing:
 	 	print horiz_axis_pos
