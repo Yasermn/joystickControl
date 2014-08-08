@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+# A python program to control ATV via x-box joypad
+# By: Yaser Mohamadi
+# INMATE lab, Middle East Technical University
+   
+
+import rospy	# To make the program act as a ROS node
+import pygame	# To use Joystick Module
+from std_msgs.msg import Float32, Int16, Int16MultiArray, MultiArrayDimension
+
+pub = rospy.Publisher('joy', Float32)			# Publishes joystick's raw data to 'joy' topic
+steer = rospy.Publisher('steering_perc', Int16)		# Publishes steering message to 'steering_perc' topic
+throt = rospy.Publisher('throttle', Int16MultiArray)	# Publishes throttle message to 'throttle' topic
+brake = rospy.Publisher('brake_perc', Int16)		# Publishes braking message to 'brake_perc' topic
+
+# Throttle standard messages:
+
+
+speed_backward_1 = Int16MultiArray()
+speed_backward_1.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_backward_1.data = (1,75,1,75)
+speed_backward_2 = Int16MultiArray()
+speed_backward_2.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_backward_2.data = (1,80,1,80)
+speed_backward_3 = Int16MultiArray()
+speed_backward_3.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_backward_3.data = (1,85,1,85)
+speed_backward_4 = Int16MultiArray()
+speed_backward_4.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_backward_4.data = (1,90,1,90)
+
+stop_backward = Int16MultiArray()
+stop_backward.layout.dim = [MultiArrayDimension('data', 1, 4)]
+stop_backward.data = (1,0,1,0)		# Backward to Still
+stop_forward = Int16MultiArray()
+stop_forward.layout.dim = [MultiArrayDimension('data', 1, 4)]
+stop_forward.data = (0,0,0,0)		# Forward to Still
+
+speed_forward_1 = Int16MultiArray()
+speed_forward_1.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_forward_1.data = (0,75,0,75)		# Direct Forward
+speed_forward_2 = Int16MultiArray()
+speed_forward_2.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_forward_2.data = (0,80,0,80)
+speed_forward_3 = Int16MultiArray()
+speed_forward_3.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_forward_3.data = (0,85,0,85)
+speed_forward_4 = Int16MultiArray()
+speed_forward_4.layout.dim = [MultiArrayDimension('data', 1, 4)]
+speed_forward_4.data = (0,90,0,90)
+
+
+
+rospy.init_node('joy', anonymous=True)		# Initiate ROS node 'joy'
+r = rospy.Rate(2) 				# Frequency: 10hz
+
+def joy():
+	gear=0
+	stop_direction=False
+
+	pygame.init()		# Initiate 'pygame'
+
+ 	#Loop until the user clicks the close button.
+	done = False
+
+	# Used to manage how fast the screen updates
+	clock = pygame.time.Clock()
+
+	# Count the joysticks the computer has
+	joystick_count = pygame.joystick.get_count()
+	if joystick_count == 0:
+	    # No joysticks!
+	    brake.publish(100) # Emergency Brake
+	    print ("Error, I didn't find any joysticks.")
+	else:
+	    # Use joystick #0 and initialize it
+	    my_joystick = pygame.joystick.Joystick(0)
+	    my_joystick.init()
+#	    n=my_joystick.get_numaxes()
+	    n=my_joystick.get_numbuttons()
+	while not done:
+
+	    # Event processing
+	    for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+		    done = True
+
+	    # Main stuff starts here!
+
+	    if joystick_count != 0:	# As long as there is a joystick
+
+		# This gets the position of the axis on the game controller
+		# It returns a number between -1.0 and +1.0
+		horiz_axis_pos = my_joystick.get_axis(0)	# Horizontal axis
+		vert_axis_pos = my_joystick.get_axis(1)		# Vertical axis
+		
+		brake_button = my_joystick.get_button(1)
+
+		gear_down = my_joystick.get_button(6)
+		gear_up = my_joystick.get_button(7)
+
+		neutral = my_joystick.get_button(3)
+
+		gas = my_joystick.get_button(2)
+
+
+		# Throttling & Steering actions: 
+				
+		if (gear_up):
+			gear=gear+1
+		if (gear_down):
+			gear=gear-1
+
+		if (neutral):
+			if (gear<0):
+				gear=0
+				stop_direction==True
+			elif (gear>0):
+				gear=0
+				stop_direction==False
+
+		if (gas):	
+			if (gear==1):
+				throt.publish(speed_forward_1)
+			elif (gear==2):
+				throt.publish(speed_forward_2)	
+			elif (gear==3):
+				throt.publish(speed_forward_3)	
+			elif (gear>3):
+				throt.publish(speed_forward_4)	
+			elif (gear==-1):
+				throt.publish(speed_backward_1)	
+			elif (gear==-2):
+				throt.publish(speed_backward_2)	
+			elif (gear==-3):
+				throt.publish(speed_backward_3)
+			elif (gear<-3):
+				throt.publish(speed_backward_4)	
+			else :
+				if (stop_direction):
+					throt.publish(stop_backward)
+				else :
+					throt.publish(stop_forward)			
+		else :
+			if (stop_direction):
+				throt.publish(stop_backward)
+			else :
+				throt.publish(stop_forward)
+
+
+#		if (-t<horiz_axis_pos<t):
+#				steer.publish(50)	# 'steer_perc' topic gets integer message in the range 0 - 100. 0>>-30deg, 50>>0deg, and 100>>30deg
+#			elif (horiz_axis_pos < -t) :
+#				steer.publish(int(50 + ((horiz_axis_pos+t)*50)/(1-t)))	# Mapping joystick data (-1 to 1) to steer_perc (0 to 100)
+#			elif (horiz_axis_pos > t) :
+#				steer.publish(int(51 + ((horiz_axis_pos-t)*50)/(1-t)))
+
+
+
+
+#		if (brake_button):
+#			brake.publish(100)
+#		else:
+#			brake.publish(0)
+
+
+		# Some extra stuff for testing:
+	 	#print horiz_axis_pos
+		#print vert_axis_pos
+#		print n
+	        print gear
+		r.sleep()
+
+	    clock.tick(600)
+pygame.quit()
+
+if __name__ == '__main__':
+	try:
+		joy()
+	except rospy.ROSInterruptException: pass
